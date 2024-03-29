@@ -1,7 +1,11 @@
 package br.com.ecosensor.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import br.com.ecosensor.model.enums.FieldEvent;
 
 public class Fieldboard {
 	
@@ -13,10 +17,24 @@ public class Fieldboard {
 	private boolean markned = false;
 	
 	private List<Fieldboard> neighbors = new ArrayList<>();
+	private Set<FieldObserver> observers = new HashSet<>();
+	
+	/**
+	 * private List<BiConsumer<Fieldboard, FieldEvent>> observers = new
+	 * ArrayList<>();
+	 */
 	
 	Fieldboard(int line, int column) {
 		this.line = line;
 		this.column = column;
+	}
+	
+	public void registerObserver(FieldObserver observer) {
+		this.observers.add(observer);
+	}
+	
+	private void notifyObservers(FieldEvent event) {
+		this.observers.stream().forEach(o -> o.occurredEvent(this, event));
 	}
 	
 	boolean addNeighbor(Fieldboard neighbor) {
@@ -39,6 +57,11 @@ public class Fieldboard {
 	void changeTag() {
 		if (!this.openned) {
 			this.markned = !this.isMarkned();
+			if (markned) {
+				notifyObservers(FieldEvent.TOMARK);
+			} else {
+				notifyObservers(FieldEvent.UNMARK);
+			}
 		}
 	}
 	
@@ -46,8 +69,12 @@ public class Fieldboard {
 		if (!this.openned && !this.isMarkned()) {
 			this.openned = true;
 			if (this.mineded) {
-				// TODO implements new version
+				notifyObservers(FieldEvent.EXPLODE);
+				return true;
 			}
+			
+			setOpenned(true);
+			
 			if (safeNeighbor()) {
 				this.neighbors.forEach(n -> n.open());
 			}
@@ -75,6 +102,9 @@ public class Fieldboard {
 	
 	void setOpenned(boolean openned) {
 		this.openned = openned;
+		if (openned) {
+			notifyObservers(FieldEvent.OPEN);
+		}
 	}
 	
 	public boolean isOpen() {

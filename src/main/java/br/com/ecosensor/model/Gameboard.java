@@ -2,15 +2,19 @@ package br.com.ecosensor.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class Gameboard {
+import br.com.ecosensor.model.enums.FieldEvent;
+
+public class Gameboard implements FieldObserver {
 	
 	private int lines;
 	private int columns;
 	private int mines;
 	
 	private List<Fieldboard> fields = new ArrayList<>();
+	private List<Consumer<ResultEvent>> observers = new ArrayList<>();
 	
 	public Gameboard(int lines, int columns, int mines) {
 		this.lines = lines;
@@ -23,16 +27,18 @@ public class Gameboard {
 		
 	}
 	
+	public void registerObserver(Consumer<ResultEvent> observer) {
+		this.observers.add(observer);
+	}
+	
+	private void notifyObservers(boolean result) {
+		this.observers.stream().forEach(o -> o.accept(new ResultEvent(result)));
+	}
+	
 	public void open(int line, int column) {
-		try {
-			this.fields.parallelStream()
-					.filter(c -> c.getLine() == line && c.getColumn() == column)
-					.findFirst().ifPresent(c -> c.open());
-		} catch (Exception e) {
-			// FIXME Fix implementation for method 'open'
-			this.fields.forEach(f -> f.setOpenned(true));
-			throw e;
-		}
+		this.fields.parallelStream()
+				.filter(c -> c.getLine() == line && c.getColumn() == column)
+				.findFirst().ifPresent(c -> c.open());
 	}
 	
 	public void changeTag(int line, int column) {
@@ -44,7 +50,9 @@ public class Gameboard {
 	private void generateFields() {
 		for (int i = 0; i < lines; i++) {
 			for (int j = 0; j < columns; j++) {
-				this.fields.add(new Fieldboard(i, j));
+				Fieldboard field = new Fieldboard(i, j);
+				field.registerObserver(this);
+				this.fields.add(field);
 			}
 		}
 	}
@@ -74,6 +82,22 @@ public class Gameboard {
 	public void restart() {
 		this.fields.stream().forEach(c -> c.restart());
 		raffleMines();
+	}
+	
+	@Override
+	public void occurredEvent(Fieldboard fieldboard, FieldEvent event) {
+		if (event == FieldEvent.EXPLODE) {
+			showMines();
+			notifyObservers(false);
+		} else if (goalComplete()) {
+			notifyObservers(true);
+		}
+		
+	}
+	
+	private void showMines() {
+		this.fields.stream().filter(f -> f.isMineded())
+		.forEach(f -> f.setOpenned(true));
 	}
 	
 }
