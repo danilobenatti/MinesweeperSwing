@@ -54,7 +54,7 @@ public class Fieldboard {
 		}
 	}
 	
-	void changeTag() {
+	public void changeTag() {
 		if (!this.openned) {
 			this.markned = !this.isMarkned();
 			if (markned) {
@@ -65,7 +65,7 @@ public class Fieldboard {
 		}
 	}
 	
-	boolean open() {
+	public boolean open() {
 		if (!this.openned && !this.isMarkned()) {
 			this.openned = true;
 			if (this.mineded) {
@@ -84,7 +84,7 @@ public class Fieldboard {
 		}
 	}
 	
-	boolean safeNeighbor() {
+	public boolean safeNeighbor() {
 		return this.neighbors.stream().noneMatch(n -> n.mineded);
 	}
 	
@@ -129,14 +129,15 @@ public class Fieldboard {
 		return uncovereField || protectedField;
 	}
 	
-	long minesIntoNeighbor() {
-		return this.neighbors.stream().filter(n -> n.mineded).count();
+	public int minesIntoNeighbor() {
+		return (int) this.neighbors.stream().filter(n -> n.mineded).count();
 	}
 	
 	void restart() {
 		this.openned = false;
 		this.mineded = false;
 		this.markned = false;
+		notifyObservers(FieldEvent.RESTART);
 	}
 	
 }

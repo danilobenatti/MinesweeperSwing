@@ -9,12 +9,20 @@ import br.com.ecosensor.model.enums.FieldEvent;
 
 public class Gameboard implements FieldObserver {
 	
-	private int lines;
-	private int columns;
-	private int mines;
+	private final int lines;
+	private final int columns;
+	private final int mines;
 	
-	private List<Fieldboard> fields = new ArrayList<>();
-	private List<Consumer<ResultEvent>> observers = new ArrayList<>();
+	private final List<Fieldboard> fields = new ArrayList<>();
+	private final List<Consumer<ResultEvent>> observers = new ArrayList<>();
+	
+	public int getLines() {
+		return lines;
+	}
+	
+	public int getColumns() {
+		return columns;
+	}
 	
 	public Gameboard(int lines, int columns, int mines) {
 		this.lines = lines;
@@ -25,6 +33,10 @@ public class Gameboard implements FieldObserver {
 		associateNeighbors();
 		raffleMines();
 		
+	}
+	
+	public void forEachField(Consumer<Fieldboard> function) {
+		this.fields.forEach(function);
 	}
 	
 	public void registerObserver(Consumer<ResultEvent> observer) {
@@ -97,7 +109,7 @@ public class Gameboard implements FieldObserver {
 	
 	private void showMines() {
 		this.fields.stream().filter(f -> f.isMineded())
-		.forEach(f -> f.setOpenned(true));
+				.filter(f -> !f.isMarkned()).forEach(f -> f.setOpenned(true));
 	}
 	
 }
